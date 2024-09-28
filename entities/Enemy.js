@@ -1,10 +1,14 @@
 class Enemy {
-    constructor(scene, x, y) {
+    constructor(scene, x, y, healthBarId, nameId, healthNumberId) {
         this.scene = scene;
         this.sprite = this.scene.physics.add.sprite(x, y, 'enemy1');
         this.sprite.setScale(5);
         this.sprite.flipX = true;
-        this.health = 20;
+        this.healthBarId = healthBarId;
+        this.nameId = nameId;
+        this.healthNumberId = healthNumberId;
+        this.health = 50;
+        this.maxHealth = 50;
         this.sprite.play("enemy1Idle");
         this.sprite.isAttacking = false; // Trạng thái tấn công
 
@@ -104,11 +108,55 @@ class Enemy {
             });
         }
     }
+    updateHealthBar() {
+        const healthPercentage = (this.health / this.maxHealth) * 100;
+        const healthBarElement = document.getElementById(this.healthBarId);
+        const healthNumberElement = document.getElementById(this.healthNumberId);
 
+        if (healthBarElement) {
+            healthBarElement.style.width = healthPercentage + '%';
+        } else {
+            console.error(`Element with ID ${this.healthBarId} not found`);
+        }
+
+        if (healthNumberElement) {
+            healthNumberElement.innerText = this.health;
+        } else {
+            console.error(`Element with ID ${this.healthNumberId} not found`);
+        }
+
+        // Cập nhật vị trí của thanh máu
+        if (healthBarElement) {
+            healthBarElement.style.left = `${this.sprite.x - 100}px`;
+            healthBarElement.style.top = `${this.sprite.y - 50}px`;
+        }
+        this.updateHealthBarPosition();
+    }
+    updateHealthBarPosition() {
+        const healthBarElement = document.getElementById(this.healthBarId);
+        const nameElement = document.getElementById(this.nameId);
+        const healthNumberElement = document.getElementById(this.healthNumberId);
+
+        if (healthBarElement) {
+            healthBarElement.style.left = `${this.sprite.x - 100}px`;
+            healthBarElement.style.top = `${this.sprite.y - 50}px`;
+        }
+
+        if (nameElement) {
+            nameElement.style.left = `${this.sprite.x - 100}px`;
+            nameElement.style.top = `${this.sprite.y - 70}px`; // Điều chỉnh nếu cần
+        }
+
+        if (healthNumberElement) {
+            healthNumberElement.style.left = `${this.sprite.x - 100}px`;
+            healthNumberElement.style.top = `${this.sprite.y - 30}px`; // Điều chỉnh nếu cần
+        }
+    }
     takeDamage(amount) {
         this.sprite.play("enemy1Hurt");
         this.health -= amount;
         console.log("Enemy was attacked");
+        this.updateHealthBar();
         if (this.health <= 0) {
             this.scene.handleEnemyDeath(this); // Xử lý cái chết của kẻ thù
         } else {

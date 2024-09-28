@@ -1,19 +1,23 @@
-class Player{
-    constructor(scene, x, y) {
+class Player {
+    constructor(scene, x, y, healthBarId, nameId, healthNumberId) {
         // Call the parent class constructor
         this.scene = scene;
         this.sprite = this.scene.physics.add.sprite(x, y, 'player');
         // Set up player properties
         this.sprite.setScale(5);
+        this.healthBarId = healthBarId;
+        this.nameId = nameId;
+        this.healthNumberId = healthNumberId;
         this.health = 100;
+        this.maxHealth = 100;
         this.isAttacking = false;
 
         // Create animations
         this.createAnimations();
 
         // Play the idle animation
-   
-            this.sprite.play("player");
+
+        this.sprite.play("player");
 
         // Add collision with enemies (assuming enemies are in a physics group)
         // scene.physics.add.collider(this, scene.enemies, scene.handleEnemyAttack, null, scene);
@@ -67,7 +71,7 @@ class Player{
         // Handle mouse release to return to idle
         this.scene.input.on('pointerup', () => {
             if (!this.isAttacking) {
-                this.play('player'); // Return to idle when mouse button is released
+                this.sprite.play('player'); // Return to idle when mouse button is released
             }
         });
     }
@@ -76,13 +80,13 @@ class Player{
         if (!this.isAttacking) {
             this.isAttacking = true;
             this.sprite.play("playerAttack");
-    
+
             // Tạo hitbox cho đòn tấn công
             const attackHitbox = this.scene.physics.add.sprite(this.sprite.x, this.sprite.y, 'attack').setScale(3);
-    
+
             // Lọc ra các kẻ thù còn sống
             const activeEnemies = this.scene.enemies.filter(enemy => enemy && enemy.sprite && enemy.sprite.active);
-    
+
             if (activeEnemies.length === 0) {
                 this.scene.checkGameOver();
                 console.log('No active enemies to target.');
@@ -91,10 +95,10 @@ class Player{
                 this.sprite.play('player');
                 return;
             }
-    
+
             // Tính toán vị trí trung tâm của các kẻ thù còn sống
             const centerX = activeEnemies.reduce((sum, enemy) => sum + enemy.sprite.x, 0) / activeEnemies.length;
-    
+
             // Tạo tween để di chuyển hitbox theo phương ngang
             this.scene.tweens.add({
                 targets: attackHitbox,
@@ -103,10 +107,10 @@ class Player{
                 ease: 'Power2',
                 onComplete: () => {
                     console.log('Attack hitbox reached target.');
-    
+
                     // Phát hoạt ảnh attack tại vị trí của hitbox
                     attackHitbox.play('attack');
-    
+
                     // Đảm bảo hoạt ảnh tấn công phát đủ khung hình
                     attackHitbox.once('animationcomplete', (event) => {
                         if (event.key === 'attack') {
@@ -126,7 +130,7 @@ class Player{
                                     }
                                 }
                             });
-    
+
                             attackHitbox.destroy(); // Xóa hitbox sau khi hoàn tất
                             this.isAttacking = false;
                             this.sprite.play('player'); // Trở về hoạt ảnh idle
@@ -134,7 +138,7 @@ class Player{
                     });
                 }
             });
-    
+
             // Xử lý va chạm giữa hitbox và kẻ thù
             this.scene.physics.add.overlap(attackHitbox, this.scene.enemies, (hitbox, enemy) => {
                 if (enemy.sprite.active) {
@@ -144,7 +148,7 @@ class Player{
             });
         }
     }
-    
+
 
 
 
@@ -155,34 +159,34 @@ class Player{
             this.isAttacking = true;
             this.sprite.play("playerAttack");
             console.log('Skill Q activated.');
-    
+
             // Xóa sprite cũ nếu tồn tại
             if (this.skillQSprite && this.skillQSprite.active) {
                 this.skillQSprite.destroy();
                 console.log('Old Skill Q sprite destroyed.');
             }
-    
+
             // Lọc ra các kẻ thù còn sống
             const activeEnemies = this.scene.enemies.filter(enemy => enemy && enemy.sprite && enemy.sprite.active);
-    
+
             if (activeEnemies.length === 0) {
                 console.log('No active enemies to target.');
                 this.isAttacking = false;
                 this.sprite.play('player');
                 return;
             }
-    
+
             // Tính toán vị trí trung tâm của các kẻ thù còn sống
             const centerX = activeEnemies.reduce((sum, enemy) => sum + enemy.sprite.x, 0) / activeEnemies.length;
             const centerY = activeEnemies.reduce((sum, enemy) => sum + enemy.sprite.y, 0) / activeEnemies.length;
-    
+
             // Tạo sprite cho kỹ năng Q ở vị trí trung tâm của các kẻ thù
             this.skillQSprite = this.scene.physics.add.sprite(centerX, centerY - 200, 'skillQ'); // Đặt y cao hơn vị trí trung tâm
             this.skillQSprite.setOrigin(0.5, 0.5); // Căn giữa sprite
             this.skillQSprite.play('skillQ'); // Phát hoạt ảnh
             this.skillQSprite.setScale(0.8);
             console.log('Skill Q sprite created and animation started.');
-    
+
             // Tạo tween để di chuyển từ trên xuống
             this.scene.tweens.add({
                 targets: this.skillQSprite,
@@ -207,7 +211,7 @@ class Player{
                             }
                         }
                     });
-    
+
                     // Kiểm tra nếu vẫn còn kẻ thù sống sót
                     const remainingActiveEnemies = this.scene.enemies.some(enemy => enemy.sprite.active);
                     if (!remainingActiveEnemies) {
@@ -222,7 +226,7 @@ class Player{
             });
         }
     }
-    
+
     useSkillW() {
         if (!this.isAttacking) {
             console.log('Skill W activated.');
@@ -434,6 +438,51 @@ class Player{
             }
         });
     }
+
+    updateHealthBar() {
+        const healthPercentage = (this.health / this.maxHealth) * 100;
+        const healthBarElement = document.getElementById(this.healthBarId);
+        const healthNumberElement = document.getElementById(this.healthNumberId);
+
+        if (healthBarElement) {
+            healthBarElement.style.width = healthPercentage + '%';
+        } else {
+            console.error(`Element with ID ${this.healthBarId} not found`);
+        }
+
+        if (healthNumberElement) {
+            healthNumberElement.innerText = this.health;
+        } else {
+            console.error(`Element with ID ${this.healthNumberId} not found`);
+        }
+
+        // Cập nhật vị trí của thanh máu
+        if (healthBarElement) {
+            healthBarElement.style.left = `${this.sprite.x - 100}px`;
+            healthBarElement.style.top = `${this.sprite.y - 50}px`;
+        }
+        this.updateHealthBarPosition();
+    }
+    updateHealthBarPosition() {
+        const healthBarElement = document.getElementById(this.healthBarId);
+        const nameElement = document.getElementById(this.nameId);
+        const healthNumberElement = document.getElementById(this.healthNumberId);
+
+        if (healthBarElement) {
+            healthBarElement.style.left = `${this.sprite.x - 100}px`;
+            healthBarElement.style.top = `${this.sprite.y - 50}px`;
+        }
+
+        if (nameElement) {
+            nameElement.style.left = `${this.sprite.x - 100}px`;
+            nameElement.style.top = `${this.sprite.y - 70}px`; // Điều chỉnh nếu cần
+        }
+
+        if (healthNumberElement) {
+            healthNumberElement.style.left = `${this.sprite.x - 100}px`;
+            healthNumberElement.style.top = `${this.sprite.y - 30}px`; // Điều chỉnh nếu cần
+        }
+    }
     takeDamage(amount) {
         // Phát hoạt ảnh "hurt" trên sprite phụ
         if (!this.hurtSprite) {
@@ -444,18 +493,19 @@ class Player{
             this.hurtSprite.setPosition(this.sprite.x - 100, this.sprite.y);
         }
         this.hurtSprite.play("hurt").setScale(2);
-    
+
         // Phát hoạt ảnh "player" trên sprite chính
         this.sprite.play("player");
-    
+
         this.health -= amount;
+        this.updateHealthBar();
         console.log("Player was attacked");
-    
+
         // Kiểm tra nếu sức khỏe <= 0 và xử lý cái chết của người chơi
         if (this.health <= 0) {
             this.scene.handlePlayerDeath(this);
         }
-    }    
+    }
 }
 
 export default Player;

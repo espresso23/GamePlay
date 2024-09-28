@@ -4,7 +4,6 @@
     box-sizing: border-box;
 }
 
-/* styles.css */
 body {
     margin: 0;
     overflow: hidden;
@@ -14,4 +13,31 @@ canvas {
     display: block;
     width: 100vw;
     height: 100vh;
+}
+
+.health-bar {
+    width: 200px;
+    height: 10px;
+    background-color: #e3dede;
+    border: 1px solid #000;
+    position: relative;
+    margin-bottom: 10px;
+    border-radius: 10px;
+}
+
+.health {
+    height: 100%;
+    background-color: #f00;
+    width: 100%; /* Ban đầu thanh máu đầy */
+}
+
+.container {
+    display: flex;
+    justify-content: space-between;
+    margin-left: 10px;
+    margin-right: 10px;
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 10; /* Đảm bảo thanh máu nằm trên canvas */
 }

@@ -12,6 +12,7 @@ class Scene2 extends Phaser.Scene {
 
     create() {
         // Background setup
+        document.getElementById('health-bars').style.display = 'flex'; // Hiển thị thanh máu 
         const logo = this.add.image(this.sys.game.config.width / 2, 0 , 'logo');
         logo.setOrigin(0.5, 0); // Đặt điểm gốc ở giữa trên cùng
         console.log('Logo added:', logo);
@@ -27,7 +28,7 @@ class Scene2 extends Phaser.Scene {
         this.skillW.setVisible(false);
 
         // Create player
-        this.player = new Player(this, this.sys.game.config.width / 2 - 400, this.sys.game.config.height / 2 + 70);
+        this.player = new Player(this, this.sys.game.config.width / 2 - 400, this.sys.game.config.height / 2 + 70,'player-health-bar', 'player-name', 'player-health-number');
 
         // Enemy Animations
 
@@ -43,7 +44,7 @@ class Scene2 extends Phaser.Scene {
 
         // Initialize enemies at the given positions
         positions.forEach(pos => {
-            const enemy = new Enemy(this, pos.x, pos.y);
+            const enemy = new Enemy(this, pos.x, pos.y,'enemy-health-bar', 'enemy-name', 'enemy-health-number');
             this.enemies.push(enemy); // Add enemy to the array
         });
 
@@ -126,9 +127,13 @@ class Scene2 extends Phaser.Scene {
             this.scene.start(result === 'win' ? 'WinScene' : 'LoseScene');
         });
     }
-
-
     update() {
+        if (this.player) {
+            this.player.updateHealthBarPosition();
+        }
+        this.enemies.forEach(enemy => {
+            enemy.updateHealthBarPosition();
+        });
         this.checkGameOver();
     }
 }
