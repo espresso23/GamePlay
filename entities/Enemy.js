@@ -13,7 +13,7 @@ class Enemy {
         this.sprite.isAttacking = false; // Trạng thái tấn công
 
         // Gọi hàm tấn công ngẫu nhiên
-        this.startRandomAttack();
+       // this.startRandomAttack();
 
         // Thêm sự kiện lắng nghe animationcomplete một lần
         this.sprite.on('animationcomplete', (animation) => {
