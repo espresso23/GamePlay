@@ -153,17 +153,17 @@ class Player {
 
 
 
-    useSkillQ() {
+    useSkillR() {
         if (!this.isAttacking) {
-            console.log('Skill W activated.');
+            console.log('Skill R activated.');
             this.isAttacking = true;
             this.sprite.play("playerAttack");
-            console.log('Skill Q activated.');
+            console.log('Skill R activated.');
 
             // Xóa sprite cũ nếu tồn tại
-            if (this.skillQSprite && this.skillQSprite.active) {
-                this.skillQSprite.destroy();
-                console.log('Old Skill Q sprite destroyed.');
+            if (this.skillRSprite && this.skillRSprite.active) {
+                this.skillRSprite.destroy();
+                console.log('Old Skill R sprite destroyed.');
             }
 
             // Lọc ra các kẻ thù còn sống
@@ -180,21 +180,21 @@ class Player {
             const centerX = activeEnemies.reduce((sum, enemy) => sum + enemy.sprite.x, 0) / activeEnemies.length;
             const centerY = activeEnemies.reduce((sum, enemy) => sum + enemy.sprite.y, 0) / activeEnemies.length;
 
-            // Tạo sprite cho kỹ năng Q ở vị trí trung tâm của các kẻ thù
-            this.skillQSprite = this.scene.physics.add.sprite(centerX, centerY - 200, 'skillQ'); // Đặt y cao hơn vị trí trung tâm
-            this.skillQSprite.setOrigin(0.5, 0.5); // Căn giữa sprite
-            this.skillQSprite.play('skillQ'); // Phát hoạt ảnh
-            this.skillQSprite.setScale(0.8);
-            console.log('Skill Q sprite created and animation started.');
+            // Tạo sprite cho kỹ năng R ở vị trí trung tâm của các kẻ thù
+            this.skillRSprite = this.scene.physics.add.sprite(centerX, centerY - 200, 'skillR'); // Đặt y cao hơn vị trí trung tâm
+            this.skillRSprite.setOrigin(0.5, 0.5); // Căn giữa sprite
+            this.skillRSprite.play('skillR'); // Phát hoạt ảnh
+            this.skillRSprite.setScale(0.8);
+            console.log('Skill R sprite created and animation started.');
 
             // Tạo tween để di chuyển từ trên xuống
             this.scene.tweens.add({
-                targets: this.skillQSprite,
+                targets: this.skillRSprite,
                 y: centerY, // Di chuyển đến vị trí trung tâm
-                duration: 1000, // Thời gian di chuyển
+                duration: 200, // Thời gian di chuyển
                 ease: 'Power1',
                 onComplete: () => {
-                    console.log('Skill Q animation complete.');
+                    console.log('Skill R animation complete.');
                     // Gây sát thương cho tất cả kẻ thù khi hoạt ảnh hoàn tất
                     activeEnemies.forEach(enemy => {
                         if (enemy.sprite.active) {
@@ -207,7 +207,7 @@ class Player {
                                     this.scene.handleEnemyDeath(enemy); // Kiểm tra cái chết của kẻ thù
                                 }
                             } else {
-                                console.log('Skill Q missed the enemy.');
+                                console.log('Skill R missed the enemy.');
                             }
                         }
                     });
@@ -215,10 +215,10 @@ class Player {
                     // Kiểm tra nếu vẫn còn kẻ thù sống sót
                     const remainingActiveEnemies = this.scene.enemies.some(enemy => enemy.sprite.active);
                     if (!remainingActiveEnemies) {
-                        this.skillQSprite.destroy(); // Xóa sprite sau khi hoàn tất nếu không còn kẻ thù
-                        console.log('Skill Q sprite destroyed.');
+                        this.skillRSprite.destroy(); // Xóa sprite sau khi hoàn tất nếu không còn kẻ thù
+                        console.log('Skill R sprite destroyed.');
                     } else {
-                        console.log('Skill Q continues as there are still active enemies.');
+                        console.log('Skill R continues as there are still active enemies.');
                     }
                     this.isAttacking = false;
                     this.sprite.play("player");
@@ -231,40 +231,38 @@ class Player {
         if (!this.isAttacking) {
             console.log('Skill W activated.');
             this.isAttacking = true;
-            this.play("playerAttack");
+            this.sprite.play("playerAttack");
 
-            // Xóa sprite cũ nếu tồn tại
-            if (this.skillWSprite && this.skillWSprite.active) {
-                this.skillWSprite.destroy();
-                console.log('Old Skill W sprite destroyed.');
-            }
-            const attackHitbox = this.scene.physics.add.sprite(this.x, this.y, 'skillW').setScale(5.5);
+            const attackHitbox = this.scene.physics.add.sprite(this.sprite.x, this.sprite.y, 'skillW').setScale(5);
             // Lọc ra các kẻ thù còn sống
             const activeEnemies = this.scene.enemies.filter(enemy => enemy && enemy.sprite && enemy.sprite.active);
 
             if (activeEnemies.length === 0) {
+                this.scene.checkGameOver();
                 console.log('No active enemies to target.');
+                this.isAttacking = false;
+                attackHitbox.destroy();
+                this.sprite.play('player');
                 return;
             }
 
 
             // Tính toán vị trí trung tâm của các kẻ thù còn sống
             const centerX = activeEnemies.reduce((sum, enemy) => sum + enemy.sprite.x, 0) / activeEnemies.length;
-            //  const centerY = activeEnemies.reduce((sum, enemy) => sum + enemy.sprite.y, 0) / activeEnemies.length;
-
-            // Tạo sprite cho kỹ năng Q ở vị trí trung tâm của các kẻ thù
-            console.log('Skill W sprite created and animation started.');
-
-            // Tạo tween để di chuyển từ trên xuống
+        
+            // Tạo tween để di chuyển ngang
             this.scene.tweens.add({
                 targets: attackHitbox,
                 x: centerX, // Di chuyển đến vị trí trung tâm
-                duration: 600, // Thời gian di chuyển
-                ease: 'Power2',
+                duration: 200, // Thời gian di chuyển
+                ease: 'Power1',
                 onComplete: () => {
-                    console.log('Skill W animation complete.');
-                    // Gây sát thương cho tất cả kẻ thù khi hoạt ảnh hoàn tất
-                    attackHitbox.play("skillW");
+                    console.log('Attack hitbox reached target.');
+
+                    // Phát hoạt ảnh attack tại vị trí của hitbox
+                    attackHitbox.play('skillW');
+
+                    // Đảm bảo hoạt ảnh tấn công phát đủ khung hình
                     attackHitbox.once('animationcomplete', (event) => {
                         if (event.key === 'skillW') {
                             // Gây sát thương cho tất cả kẻ thù khi hitbox chạm đến
@@ -273,8 +271,8 @@ class Player {
                                     // Tạo tỉ lệ hụt ngẫu nhiên
                                     const hitChance = Phaser.Math.Between(0, 100);
                                     if (hitChance <= 70) { // Giả sử tỉ lệ trúng là 70%
-                                        enemy.takeDamage(20);
-                                        console.log(`Enemy took 20 damage. Current health: ${enemy.health}`);
+                                        enemy.takeDamage(10);
+                                        console.log(`Enemy took 10 damage. Current health: ${enemy.health}`);
                                         if (enemy.health <= 0) {
                                             this.scene.handleEnemyDeath(enemy); // Kiểm tra cái chết của kẻ thù
                                         }
@@ -286,7 +284,7 @@ class Player {
 
                             attackHitbox.destroy(); // Xóa hitbox sau khi hoàn tất
                             this.isAttacking = false;
-                            this.play('player'); // Trở về hoạt ảnh idle
+                            this.sprite.play('player'); // Trở về hoạt ảnh idle
                         }
                     });
                 }
@@ -294,149 +292,153 @@ class Player {
             this.scene.physics.add.overlap(attackHitbox, this.scene.enemies, (hitbox, enemy) => {
                 if (enemy.sprite.active) {
                     // Phát hoạt ảnh attack khi va chạm xảy ra
-                    attackHitbox.play('attack');
+                    attackHitbox.play('skillW');
                 }
             });
-            // Kiểm tra nếu vẫn còn kẻ thù sống sót
-            const remainingActiveEnemies = this.scene.enemies.some(enemy => enemy.sprite.active);
-            if (!remainingActiveEnemies) {
-                this.skillWSprite.destroy(); // Xóa sprite sau khi hoàn tất nếu không còn kẻ thù
-                console.log('Skill W sprite destroyed.');
-            } else {
-                console.log('Skill W continues as there are still active enemies.');
-            }
         }
     }
 
 
-    useSkillE() {
-        console.log('Skill E activated.');
+    useSkillE()  {
+        if (!this.isAttacking) {
+            console.log('Skill E activated.');
+            this.isAttacking = true;
+            this.sprite.play("playerAttack");
 
-        // Xóa sprite cũ nếu tồn tại
-        if (this.skillESprite && this.skillESprite.active) {
-            this.skillESprite.destroy();
-            console.log('Old Skill E sprite destroyed.');
-        }
+            const attackHitbox = this.scene.physics.add.sprite(this.sprite.x, this.sprite.y, 'skillE').setScale(3.5);
+            // Lọc ra các kẻ thù còn sống
+            const activeEnemies = this.scene.enemies.filter(enemy => enemy && enemy.sprite && enemy.sprite.active);
 
-        // Lọc ra các kẻ thù còn sống
-        const activeEnemies = this.scene.enemies.filter(enemy => enemy && enemy.sprite && enemy.sprite.active);
-
-        if (activeEnemies.length === 0) {
-            console.log('No active enemies to target.');
-            return;
-        }
-
-        // Tính toán vị trí trung tâm của các kẻ thù còn sống
-        const centerX = activeEnemies.reduce((sum, enemy) => sum + enemy.sprite.x, 0) / activeEnemies.length;
-        const centerY = activeEnemies.reduce((sum, enemy) => sum + enemy.sprite.y, 0) / activeEnemies.length;
-
-        // Tạo sprite cho kỹ năng Q ở vị trí trung tâm của các kẻ thù
-        this.skillESprite = this.scene.physics.add.sprite(centerX, centerY - 200, 'skillE'); // Đặt y cao hơn vị trí trung tâm
-        this.skillESprite.setOrigin(0.5, 0.5); // Căn giữa sprite
-        this.skillESprite.play('skillE'); // Phát hoạt ảnh
-        this.skillESprite.setScale(0.9);
-        console.log('Skill E sprite created and animation started.');
-
-        // Tạo tween để di chuyển từ trên xuống
-        this.scene.tweens.add({
-            targets: this.skillESprite,
-            y: centerY, // Di chuyển đến vị trí trung tâm
-            duration: 600, // Thời gian di chuyển
-            ease: 'Power1',
-            onComplete: () => {
-                console.log('Skill E animation complete.');
-                // Gây sát thương cho tất cả kẻ thù khi hoạt ảnh hoàn tất
-                activeEnemies.forEach(enemy => {
-                    if (enemy.sprite.active) {
-                        // Tạo tỉ lệ hụt ngẫu nhiên
-                        const hitChance = Phaser.Math.Between(0, 100);
-                        if (hitChance <= 70) { // Giả sử tỉ lệ trúng là 70%
-                            enemy.takeDamage(30); // Gây sát thương 30
-                            console.log(`Enemy took 30 damage. Current health: ${enemy.health}`);
-                            if (enemy.health <= 0) {
-                                this.scene.handleEnemyDeath(enemy); // Kiểm tra cái chết của kẻ thù
-                            }
-                        } else {
-                            console.log('Skill Q missed the enemy.');
-                        }
-                    }
-                });
-
-                // Kiểm tra nếu vẫn còn kẻ thù sống sót
-                const remainingActiveEnemies = this.scene.enemies.some(enemy => enemy.sprite.active);
-                if (!remainingActiveEnemies) {
-                    this.skillESprite.destroy(); // Xóa sprite sau khi hoàn tất nếu không còn kẻ thù
-                    console.log('Skill E sprite destroyed.');
-                } else {
-                    console.log('Skill E continues as there are still active enemies.');
-                }
+            if (activeEnemies.length === 0) {
+                this.scene.checkGameOver();
+                console.log('No active enemies to target.');
+                this.isAttacking = false;
+                attackHitbox.destroy();
+                this.sprite.play('player');
+                return;
             }
-        });
+
+
+            // Tính toán vị trí trung tâm của các kẻ thù còn sống
+            const centerX = activeEnemies.reduce((sum, enemy) => sum + enemy.sprite.x, 0) / activeEnemies.length;
+        
+            // Tạo tween để di chuyển ngang
+            this.scene.tweens.add({
+                targets: attackHitbox,
+                x: centerX, // Di chuyển đến vị trí trung tâm
+                duration: 300, // Thời gian di chuyển
+                ease: 'Power1',
+                onComplete: () => {
+                    console.log('Attack hitbox reached target.');
+
+                    // Phát hoạt ảnh attack tại vị trí của hitbox
+                    attackHitbox.play('skillE');
+
+                    // Đảm bảo hoạt ảnh tấn công phát đủ khung hình
+                    attackHitbox.once('animationcomplete', (event) => {
+                        if (event.key === 'skillE') {
+                            // Gây sát thương cho tất cả kẻ thù khi hitbox chạm đến
+                            activeEnemies.forEach(enemy => {
+                                if (enemy.sprite.active) {
+                                    // Tạo tỉ lệ hụt ngẫu nhiên
+                                    const hitChance = Phaser.Math.Between(0, 100);
+                                    if (hitChance <= 70) { // Giả sử tỉ lệ trúng là 70%
+                                        enemy.takeDamage(10);
+                                        console.log(`Enemy took 10 damage. Current health: ${enemy.health}`);
+                                        if (enemy.health <= 0) {
+                                            this.scene.handleEnemyDeath(enemy); // Kiểm tra cái chết của kẻ thù
+                                        }
+                                    } else {
+                                        console.log('Attack missed the enemy.');
+                                    }
+                                }
+                            });
+
+                            attackHitbox.destroy(); // Xóa hitbox sau khi hoàn tất
+                            this.isAttacking = false;
+                            this.sprite.play('player'); // Trở về hoạt ảnh idle
+                        }
+                    });
+                }
+            });
+            this.scene.physics.add.overlap(attackHitbox, this.scene.enemies, (hitbox, enemy) => {
+                if (enemy.sprite.active) {
+                    // Phát hoạt ảnh attack khi va chạm xảy ra
+                    attackHitbox.play('skillE');
+                }
+            });
+        }
     }
 
-    useSkillR() {
-        console.log('Skill R activated.');
+    useSkillQ(){
+        if (!this.isAttacking) {
+            console.log('Skill Q activated.');
+            this.isAttacking = true;
+            this.sprite.play("playerAttack");
 
-        // Xóa sprite cũ nếu tồn tại
-        if (this.skillRSprite && this.skillRSprite.active) {
-            this.skillRSprite.destroy();
-            console.log('Old Skill R sprite destroyed.');
-        }
+            const attackHitbox = this.scene.physics.add.sprite(this.sprite.x, this.sprite.y, 'skillQ').setScale(3);
+            // Lọc ra các kẻ thù còn sống
+            const activeEnemies = this.scene.enemies.filter(enemy => enemy && enemy.sprite && enemy.sprite.active);
 
-        // Lọc ra các kẻ thù còn sống
-        const activeEnemies = this.scene.enemies.filter(enemy => enemy && enemy.sprite && enemy.sprite.active);
-
-        if (activeEnemies.length === 0) {
-            console.log('No active enemies to target.');
-            return;
-        }
-
-        // Tính toán vị trí trung tâm của các kẻ thù còn sống
-        const centerX = activeEnemies.reduce((sum, enemy) => sum + enemy.sprite.x, 0) / activeEnemies.length;
-        const centerY = activeEnemies.reduce((sum, enemy) => sum + enemy.sprite.y, 0) / activeEnemies.length;
-
-        // Tạo sprite cho kỹ năng Q ở vị trí trung tâm của các kẻ thù
-        this.skillRSprite = this.scene.physics.add.sprite(centerX, centerY - 200, 'skillR'); // Đặt y cao hơn vị trí trung tâm
-        this.skillRSprite.setOrigin(0.5, 0.5); // Căn giữa sprite
-        this.skillRSprite.play('skillR'); // Phát hoạt ảnh
-        this.skillRSprite.setScale(0.9);
-        console.log('Skill R sprite created and animation started.');
-
-        // Tạo tween để di chuyển từ trên xuống
-        this.scene.tweens.add({
-            targets: this.skillRSprite,
-            y: centerY, // Di chuyển đến vị trí trung tâm
-            duration: 600, // Thời gian di chuyển
-            ease: 'Power1',
-            onComplete: () => {
-                console.log('Skill R animation complete.');
-                // Gây sát thương cho tất cả kẻ thù khi hoạt ảnh hoàn tất
-                activeEnemies.forEach(enemy => {
-                    if (enemy.sprite.active) {
-                        // Tạo tỉ lệ hụt ngẫu nhiên
-                        const hitChance = Phaser.Math.Between(0, 100);
-                        if (hitChance <= 70) { // Giả sử tỉ lệ trúng là 70%
-                            enemy.takeDamage(30); // Gây sát thương 30
-                            console.log(`Enemy took 30 damage. Current health: ${enemy.health}`);
-                            if (enemy.health <= 0) {
-                                this.scene.handleEnemyDeath(enemy); // Kiểm tra cái chết của kẻ thù
-                            }
-                        } else {
-                            console.log('Skill Q missed the enemy.');
-                        }
-                    }
-                });
-
-                // Kiểm tra nếu vẫn còn kẻ thù sống sót
-                const remainingActiveEnemies = this.scene.enemies.some(enemy => enemy.sprite.active);
-                if (!remainingActiveEnemies) {
-                    this.skillQSprite.destroy(); // Xóa sprite sau khi hoàn tất nếu không còn kẻ thù
-                    console.log('Skill R sprite destroyed.');
-                } else {
-                    console.log('Skill R continues as there are still active enemies.');
-                }
+            if (activeEnemies.length === 0) {
+                this.scene.checkGameOver();
+                console.log('No active enemies to target.');
+                this.isAttacking = false;
+                attackHitbox.destroy();
+                this.sprite.play('player');
+                return;
             }
-        });
+
+
+            // Tính toán vị trí trung tâm của các kẻ thù còn sống
+            const centerX = activeEnemies.reduce((sum, enemy) => sum + enemy.sprite.x, 0) / activeEnemies.length;
+        
+            // Tạo tween để di chuyển ngang
+            this.scene.tweens.add({
+                targets: attackHitbox,
+                x: centerX, // Di chuyển đến vị trí trung tâm
+                duration: 200, // Thời gian di chuyển
+                ease: 'Power2',
+                onComplete: () => {
+                    console.log('Attack hitbox reached target.');
+
+                    // Phát hoạt ảnh attack tại vị trí của hitbox
+                    attackHitbox.play('skillQ');
+
+                    // Đảm bảo hoạt ảnh tấn công phát đủ khung hình
+                    attackHitbox.once('animationcomplete', (event) => {
+                        if (event.key === 'skillQ') {
+                            // Gây sát thương cho tất cả kẻ thù khi hitbox chạm đến
+                            activeEnemies.forEach(enemy => {
+                                if (enemy.sprite.active) {
+                                    // Tạo tỉ lệ hụt ngẫu nhiên
+                                    const hitChance = Phaser.Math.Between(0, 100);
+                                    if (hitChance <= 70) { // Giả sử tỉ lệ trúng là 70%
+                                        enemy.takeDamage(10);
+                                        console.log(`Enemy took 10 damage. Current health: ${enemy.health}`);
+                                        if (enemy.health <= 0) {
+                                            this.scene.handleEnemyDeath(enemy); // Kiểm tra cái chết của kẻ thù
+                                        }
+                                    } else {
+                                        console.log('Attack missed the enemy.');
+                                    }
+                                }
+                            });
+
+                            attackHitbox.destroy(); // Xóa hitbox sau khi hoàn tất
+                            this.isAttacking = false;
+                            this.sprite.play('player'); // Trở về hoạt ảnh idle
+                        }
+                    });
+                }
+            });
+            this.scene.physics.add.overlap(attackHitbox, this.scene.enemies, (hitbox, enemy) => {
+                if (enemy.sprite.active) {
+                    // Phát hoạt ảnh attack khi va chạm xảy ra
+                    attackHitbox.play('skillQ');
+                }
+            });
+        }
     }
 
     updateHealthBar() {

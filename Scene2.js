@@ -7,19 +7,16 @@ class Scene2 extends Phaser.Scene {
     }
 
     preload() {
-        this.load.image("logo", 'assets/logonew.png');
+
     }
 
     create() {
         // Background setup
         document.getElementById('health-bars').style.display = 'flex'; // Hiển thị thanh máu 
-        const logo = this.add.image(this.sys.game.config.width / 2, 0 , 'logo');
-        logo.setOrigin(0.5, 0); // Đặt điểm gốc ở giữa trên cùng
-        console.log('Logo added:', logo);
         this.background = this.add.image(0, 0, 'background');
         this.background.setOrigin(0, 0);
         this.background.setDisplaySize(this.sys.game.config.width, this.sys.game.config.height);
-        this.add.text(20, 20, "Playing game", { font: "25px Arial", fill: "yellow" });
+       // this.add.text(20, 20, "Playing game", { font: "25px Arial", fill: "yellow" });
 
         // SkillQ setup
         this.skillQ = this.add.sprite(this.sys.game.config.width / 2, this.sys.game.config.height / 2, "skillQ");

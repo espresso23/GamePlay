@@ -10,6 +10,7 @@ class LoseScene extends Phaser.Scene {
 
     create() {
         // Hiển thị background nền
+        document.getElementsByClassName('logo')[0].style.display  = 'none';
         document.getElementById('health-bars').style.display = 'none';
         const background = this.add.image(0, 0, 'backgroundOver').setOrigin(0, 0);
         background.setDisplaySize(this.sys.game.config.width, this.sys.game.config.height);
@@ -33,7 +34,7 @@ class LoseScene extends Phaser.Scene {
 
         // Quay lại game khi nhấn chuột
         this.add.text(this.sys.game.config.width / 2 , this.sys.game.config.height / 2 + 200, "Click to continue", { font: "25px Arial", fill: "yellow" }).setOrigin(0.5);
-        this.input.on('pointerdown', () => this.scene.start('playGame'));
+        this.input.on('pointerdown', () => window.location.href = "stage.html");
     }
 }
 

@@ -41,3 +41,14 @@ canvas {
     left: 10px;
     z-index: 10; /* Đảm bảo thanh máu nằm trên canvas */
 }
+
+.logo{
+    display: flex;
+    position: absolute;
+    justify-content: flex-start;
+    margin-top: 10px;
+    margin-left: 10px;
+}
+.logo img{
+    width: 50%;
+}

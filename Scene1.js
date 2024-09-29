@@ -5,7 +5,7 @@ class Scene1 extends Phaser.Scene {
 
     preload() {
         this.load.image('background', 'assets/background/background3.png');
-        this.load.spritesheet('skillQ', 'assets/BlastQ.png', {
+        this.load.spritesheet('skillR', 'assets/BlastQ.png', {
             frameWidth: 440,
             frameHeight: 549
         });
@@ -17,7 +17,14 @@ class Scene1 extends Phaser.Scene {
             frameWidth: 64,
             frameHeight: 72
         });
-
+        this.load.spritesheet('skillE', 'assets/skillE.png', {
+            frameWidth: 64,
+            frameHeight: 57
+        });
+        this.load.spritesheet('skillQ', 'assets/skillQ.png', {
+            frameWidth: 64,
+            frameHeight: 57
+        });
         this.load.spritesheet("enemy1", 'assets/NightBorne.png', {
             frameWidth: 80,
             frameHeight: 80
@@ -81,8 +88,8 @@ class Scene1 extends Phaser.Scene {
             hideOnComplete: true
         });
         this.anims.create({
-            key: "skillQ",
-            frames: this.anims.generateFrameNumbers("skillQ"),
+            key: "skillR",
+            frames: this.anims.generateFrameNumbers("skillR"),
             frameRate: 10,
             repeat: 0,
             hideOnComplete: true
@@ -91,6 +98,20 @@ class Scene1 extends Phaser.Scene {
             key: "skillW",
             frames: this.anims.generateFrameNumbers("skillW"),
             frameRate: 20,
+            repeat: 0,
+            hideOnComplete: true
+        });
+        this.anims.create({
+            key: "skillE",
+            frames: this.anims.generateFrameNumbers("skillE"),
+            frameRate: 20,
+            repeat: 0,
+            hideOnComplete: true
+        });
+        this.anims.create({
+            key: "skillQ",
+            frames: this.anims.generateFrameNumbers("skillQ"),
+            frameRate: 30,
             repeat: 0,
             hideOnComplete: true
         });
