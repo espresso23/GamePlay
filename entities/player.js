@@ -11,7 +11,6 @@ class Player {
         this.health = 100;
         this.maxHealth = 100;
         this.isAttacking = false;
-
         // Create animations
         this.createAnimations();
 

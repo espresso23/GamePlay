@@ -52,3 +52,7 @@ canvas {
 .logo img{
     width: 50%;
 }
+.skill{
+    display: flex;
+    justify-content: space-evenly;
+}

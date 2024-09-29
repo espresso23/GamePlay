@@ -19,18 +19,22 @@ class Scene2 extends Phaser.Scene {
        // this.add.text(20, 20, "Playing game", { font: "25px Arial", fill: "yellow" });
 
         // SkillQ setup
-        this.skillQ = this.add.sprite(this.sys.game.config.width / 2, this.sys.game.config.height / 2, "skillQ");
-        this.skillQ.setVisible(false);
-        this.skillW = this.add.sprite(this.sys.game.config.width / 2, this.sys.game.config.height / 2, "skillW");
-        this.skillW.setVisible(false);
+        // this.skillQ = this.add.sprite(this.sys.game.config.width / 2, this.sys.game.config.height / 2, "skillQ");
+        // this.skillQ.setVisible(false);
+        // this.skillW = this.add.sprite(this.sys.game.config.width / 2, this.sys.game.config.height / 2, "skillW");
+        // this.skillW.setVisible(false);
 
         // Create player
         this.player = new Player(this, this.sys.game.config.width / 2 - 400, this.sys.game.config.height / 2 + 70,'player-health-bar', 'player-name', 'player-health-number');
 
-        // Enemy Animations
-
-
-
+        const skills = {
+            Q: function() { console.log("Player uses skill Q!"); },
+            W: function() { console.log("Player uses skill W!"); },
+            E: function() { console.log("Player uses skill E!"); },
+            R: function() { console.log("Player uses skill R!"); }
+        };
+        this.turnsLeft = 25;
+        this.playerTurn = true;
         // Create enemies
         this.enemies = [];
         const positions = [
@@ -48,12 +52,12 @@ class Scene2 extends Phaser.Scene {
         // Animation for skill Q
 
 
-        this.skillQ.on('animationcomplete', () => {
-            this.skillQ.setVisible(false); // Hide skill sprite after animation
-        });
-        this.skillW.on('animationcomplete', () => {
-            this.skillW.setVisible(false); // Hide skill sprite after animation
-        });
+        // this.skillQ.on('animationcomplete', () => {
+        //     this.skillQ.setVisible(false); // Hide skill sprite after animation
+        // });
+        // this.skillW.on('animationcomplete', () => {
+        //     this.skillW.setVisible(false); // Hide skill sprite after animation
+        // });
 
         // Handle skill 'Q'
         this.input.keyboard.on('keydown-Q', () => {
@@ -68,9 +72,7 @@ class Scene2 extends Phaser.Scene {
         this.input.keyboard.on('keydown-R', () => {
             this.player.useSkillR();
         });
-        this.attack = this.physics.add.sprite(this, this.sys.game.config.width / 2 - 400, this.sys.game.config.height / 2 + 70, 'attack');
-        this.attack.play("attack")
-        // Handle player attack
+
         this.input.on('pointerdown', () => {
             this.player.attack();
         });
@@ -110,14 +112,27 @@ class Scene2 extends Phaser.Scene {
             });
         }
     }
+    // checkGameOver() {
+    //     if (this.enemies.length === 0) {
+    //         this.showEndScreen('win');
+    //     } else if (this.player.health <= 0) {
+    //         this.showEndScreen('lose');
+    //     }
+    // }
     checkGameOver() {
-        if (this.enemies.length === 0) {
-            this.showEndScreen('win');
-        } else if (this.player.health <= 0) {
+        if (this.turnsLeft <= 0 || this.player.health <= 0) {
+            console.log("Game Over! Player loses.");
             this.showEndScreen('lose');
+        } else if (this.enemies.length === 0) {
+            this.showEndScreen('win');
+        } else {
+            if (this.playerTurn) {
+                // Wait for player action
+            } else {
+                this.enemyAttack();
+            }
         }
     }
-
     showEndScreen(result) {
   // Chuyển cảnh sau một khoảng thời gian
         this.time.delayedCall(1200, () => {

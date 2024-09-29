@@ -1,37 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Phaser Game</title>
-    <!-- Load Phaser framework -->
-    <script type="text/javascript" src="phaser.min.js"></script>
-    <!-- Link to your game logic -->
-    <script type="module" src="game.js" ></script>
-    <script type="module" src="Scene1.js"></script>
-    <script type="module" src="Scene2.js"></script>
-    <link rel="stylesheet" href="style.css">
-   
-</head>
-<body>
-    <div class="logo">
-        <img src="/assets/logonew.png" alt="logo">
-    </div>
-    <div id="health-bars" class="container">
-        <div id="player-health-bar" class="health-bar">
-            <div id="player-health" class="health"></div>
-            <div id="player-name" class="name">Samurai</div>
-            <div id="player-health-number" class="health-number">100</div>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Phaser Game</title>
+        <!-- Load Phaser framework -->
+        <script type="text/javascript" src="phaser.min.js"></script>
+        <!-- Link to your game logic -->
+        <script type="module" src="game.js"></script>
+        <script type="module" src="Scene1.js"></script>
+        <script type="module" src="Scene2.js"></script>
+        <link rel="stylesheet" href="style.css">
+
+    </head>
+    <body>
+        <div class="logo">
+            <img src="/assets/logonew.png" alt="logo">
         </div>
-        <div id="enemy-health-bar" class="health-bar">
-            <div id="enemy-health" class="health"></div>
-            <div id="enemy-name" class="name">NightBorn</div>
-            <div id="enemy-health-number" class="health-number">100</div>
+        <div id="health-bars" class="container">
+            <div id="player-health-bar" class="health-bar">
+                <div id="player-health" class="health"></div>
+                <div id="player-name" class="name">Samurai</div>
+                <div id="player-health-number" class="health-number">100</div>
+            </div>
+            <div id="enemy-health-bar" class="health-bar">
+                <div id="enemy-health" class="health"></div>
+                <div id="enemy-name" class="name">NightBorn</div>
+                <div id="enemy-health-number" class="health-number">100</div>
+            </div>
         </div>
-    </div>
-    
-    
-    
-    
-</body>
+        <div class="skill">
+            <button id="skillQ">Q</button>
+            <button id="skillW">W</button>
+            <button id="skillE">E</button>
+            <button id="skillR">R</button>
+            <button id="attack">Attack</button>
+        </div>
+
+    </body>
 </html>
