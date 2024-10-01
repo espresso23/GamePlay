@@ -1,178 +1,144 @@
-class Enemy {
-    constructor(scene, x, y, healthBarId, nameId, healthNumberId) {
-        this.scene = scene;
-        this.sprite = this.scene.physics.add.sprite(x, y, 'enemy1');
-        this.sprite.setScale(5);
-        this.sprite.flipX = true;
+class Enemy extends Phaser.GameObjects.Sprite {
+    constructor(scene, x, y, healthBarId, nameId, healthNumberId, player) {
+        super(scene, x, y, 'enemy1');
+        scene.add.existing(this);
+        scene.physics.world.enable(this);
+
+        // Thiết lập thuộc tính
+        this.player = player;
+        this.setScale(5);
+        this.flipX = true;
         this.healthBarId = healthBarId;
         this.nameId = nameId;
         this.healthNumberId = healthNumberId;
-        this.health = 50;
-        this.maxHealth = 50;
-        this.sprite.play("enemy1Idle");
-        this.sprite.isAttacking = false; // Trạng thái tấn công
-
-        // Gọi hàm tấn công ngẫu nhiên
-       // this.startRandomAttack();
-
-        // Thêm sự kiện lắng nghe animationcomplete một lần
-        this.sprite.on('animationcomplete', (animation) => {
-            if (animation.key === 'enemy1Attack') {
-                this.sprite.isAttacking = false; // Reset trạng thái tấn công
-                this.sprite.play('enemy1Idle'); // Ngay lập tức chuyển về hoạt ảnh idle
-                console.log('Enemy is Idle.');
-                this.startRandomAttack();
-            }
-        });
-
-        // Xử lý va chạm giữa enemy và player attack
-        this.scene.physics.add.overlap(this.sprite, this.scene.playerAttacks, this.handlePlayerAttack, null, this);
+        this.health = 1000;
+        this.maxHealth = 1000;
+        this.isAttacking = false; // Theo dõi trạng thái tấn công
+        this.enemyAttackDelay = 500;
+        this.on('animationcomplete', this.handleAnimationComplete, this); // Nghe sự kiện kết thúc animation
     }
 
-    startRandomAttack() {
-        // Tạo thời gian ngẫu nhiên cho lần tấn công tiếp theo
-        const attackDelay = Phaser.Math.Between(3000, 5000); // Thời gian tấn công ngẫu nhiên từ 3 đến 5 giây
-
-        setTimeout(() => {
-            this.attack();
-        }, attackDelay);
+    // Phương thức xử lý khi kết thúc animation
+    handleAnimationComplete(animation) {
+        if (animation.key === 'enemy1Attack') {
+            this.isAttacking = false; // Thiết lập lại trạng thái tấn công
+            this.play('enemy1Idle'); // Trở về trạng thái idle sau khi tấn công
+            console.log('Enemy is Idle.');
+        }
     }
 
+    // Phương thức tấn công của kẻ địch
     attack() {
-        if (!this.sprite.isAttacking) {
-            this.sprite.isAttacking = true; // Đánh dấu trạng thái đang tấn công
-            this.sprite.play('enemy1Attack'); // Chạy hoạt ảnh tấn công
-            const attackHitbox = this.scene.physics.add.sprite(this.sprite.x, this.sprite.y, 'enemyAttack').setScale(3);
-            const player = this.scene.player;
+        if (!this.isAttacking) {
+            this.isAttacking = true; // Thiết lập trạng thái tấn công
+            const attackHitbox = this.createAttackHitbox();
 
-            if (!player || !player.sprite) {
-                console.error('Player or player sprite is not defined.');
-                this.sprite.isAttacking = false;
-                this.sprite.play('enemy1Idle');
-                attackHitbox.destroy();
-                return;
-            }
-
-
-            console.log('Enemy is attacking.');
-
-            // Tạo tween để di chuyển hitbox theo phương ngang
             this.scene.tweens.add({
                 targets: attackHitbox,
-                x: player.sprite.x, // Di chuyển đến vị trí của người chơi
-                duration: 200, // Thời gian di chuyển
+                x: this.player.x,
+                duration: 200,
                 ease: 'Power2',
-                onComplete: () => {
-                    console.log('Attack hitbox reached target.');
-
-                    // Phát hoạt ảnh attack tại vị trí của hitbox
-                    attackHitbox.play('enemyAttack');
-
-                    // Đảm bảo hoạt ảnh tấn công phát đủ khung hình
-                    attackHitbox.once('animationcomplete', (event) => {
-                        if (event.key === 'enemyAttack') {
-                            // Gây sát thương cho người chơi khi hitbox chạm đến
-                            if (player.sprite.active) {
-                                // Tạo tỉ lệ hụt ngẫu nhiên
-                                const hitChance = Phaser.Math.Between(0, 100);
-                                if (hitChance <= 70) { // Giả sử tỉ lệ trúng là 70%
-                                    player.takeDamage(10);
-                                    console.log(`Player took 10 damage. Current health: ${player.health}`);
-                                    if (player.health <= 0) {
-                                        this.scene.handlePlayerDeath(player); // Kiểm tra cái chết của người chơi
-                                    }
-                                } else {
-                                    console.log('Attack missed the player.');
-                                }
-                            }
-
-                            attackHitbox.destroy(); // Xóa hitbox sau khi hoàn tất
-                        }
-                    });
-                }
-            });
-
-            // Xử lý va chạm giữa hitbox và người chơi
-            this.scene.physics.add.overlap(attackHitbox, player, (hitbox, player) => {
-                if (player.sprite.active) {
-                    // Phát hoạt ảnh attack khi va chạm xảy ra
-                    attackHitbox.play('enemyAttack');
-
-                    // Đảm bảo hitbox bị phá hủy sau khi va chạm
-                    attackHitbox.once('animationcomplete', (event) => {
-                        if (event.key === 'enemyAttack') {
-                            attackHitbox.destroy();
-                        }
-                    });
-                }
+                onComplete: () => this.handleAttackComplete(attackHitbox)
             });
         }
     }
+
+    createAttackHitbox() {
+        const attackHitbox = this.scene.physics.add.sprite(this.x, this.y, 'enemyAttack').setScale(3);
+        return attackHitbox;
+    }
+
+    handleAttackComplete(attackHitbox) {
+        console.log('Attack hitbox has reached the target.');
+        this.play('enemy1Attack');
+
+        this.scene.physics.add.overlap(attackHitbox, this.player, () => this.onPlayerHit(attackHitbox));
+    }
+
+    onPlayerHit(attackHitbox) {
+        const hitChance = Phaser.Math.Between(0, 100);
+        if (hitChance <= 30) {
+            this.player.takeDamage(10); // Gây sát thương cho người chơi
+            if (this.player.health <= 0) {
+                this.scene.handlePlayerDeath(this.player);
+            }
+        } else {
+            console.log('Attack missed the player.');
+        }
+
+        attackHitbox.destroy(); // Xóa hitbox sau khi tấn công
+        this.isAttacking = false; // Thiết lập lại trạng thái tấn công
+    }
+
+    // Cập nhật thanh máu
     updateHealthBar() {
-        const healthPercentage = (this.health / this.maxHealth) * 100;
-        const healthBarElement = document.getElementById(this.healthBarId);
-        const healthNumberElement = document.getElementById(this.healthNumberId);
-
-        if (healthBarElement) {
-            healthBarElement.style.width = healthPercentage + '%';
-        } else {
-            console.error(`Element with ID ${this.healthBarId} not found`);
-        }
-
-        if (healthNumberElement) {
-            healthNumberElement.innerText = this.health;
-        } else {
-            console.error(`Element with ID ${this.healthNumberId} not found`);
-        }
-
-        // Cập nhật vị trí của thanh máu
-        if (healthBarElement) {
-            healthBarElement.style.left = `${this.sprite.x - 100}px`;
-            healthBarElement.style.top = `${this.sprite.y - 50}px`;
-        }
+        const healthPercentage = Math.max((this.health / this.maxHealth) * 100, 0); // Đảm bảo không âm
+        this.updateHealthBarElement(this.healthBarId, healthPercentage);
+        this.updateHealthNumberElement(this.healthNumberId);
         this.updateHealthBarPosition();
     }
+
+    updateHealthBarElement(barId, healthPercentage) {
+        const healthBarElement = document.getElementById(barId);
+        if (healthBarElement) {
+            healthBarElement.style.width = `${healthPercentage}%`;
+            healthBarElement.style.backgroundColor = healthPercentage > 30 ? 'green' : 'red';
+        } else {
+            console.error(`Element with ID ${barId} not found`);
+        }
+    }
+
+    updateHealthNumberElement(numberId) {
+        const healthNumberElement = document.getElementById(numberId);
+        if (healthNumberElement) {
+            healthNumberElement.innerText = this.health > 0 ? this.health : 0;
+        } else {
+            console.error(`Element with ID ${numberId} not found`);
+        }
+    }
+
     updateHealthBarPosition() {
         const healthBarElement = document.getElementById(this.healthBarId);
         const nameElement = document.getElementById(this.nameId);
         const healthNumberElement = document.getElementById(this.healthNumberId);
 
         if (healthBarElement) {
-            healthBarElement.style.left = `${this.sprite.x - 100}px`;
-            healthBarElement.style.top = `${this.sprite.y - 50}px`;
+            this.setElementPosition(healthBarElement, -100, -50);
         }
 
         if (nameElement) {
-            nameElement.style.left = `${this.sprite.x - 100}px`;
-            nameElement.style.top = `${this.sprite.y - 70}px`; // Điều chỉnh nếu cần
+            this.setElementPosition(nameElement, -100, -70);
         }
 
         if (healthNumberElement) {
-            healthNumberElement.style.left = `${this.sprite.x - 100}px`;
-            healthNumberElement.style.top = `${this.sprite.y - 30}px`; // Điều chỉnh nếu cần
+            this.setElementPosition(healthNumberElement, -100, -30);
         }
     }
+
+    setElementPosition(element, offsetX, offsetY) {
+        element.style.left = `${this.x + offsetX}px`;
+        element.style.top = `${this.y + offsetY}px`;
+    }
+
     takeDamage(amount) {
-        this.sprite.play("enemy1Hurt");
+        this.play("enemy1Hurt");
         this.health -= amount;
         console.log("Enemy was attacked");
         this.updateHealthBar();
         if (this.health <= 0) {
-            this.scene.handleEnemyDeath(this); // Xử lý cái chết của kẻ thù
-        } else {
-            this.startRandomAttack();
+            this.scene.handleEnemyDeath(this);
         }
     }
 
-    handlePlayerAttack(enemy, playerAttack) {
-        // Implement logic to handle player attack on enemy
+    handlePlayerAttack(playerAttack) {
         this.health -= playerAttack.damage;
         console.log(`Enemy took ${playerAttack.damage} damage. Current health: ${this.health}`);
         if (this.health <= 0) {
-            this.sprite.destroy();
+            this.destroy(); // Phá hủy đối tượng enemy sau khi chết
             console.log('Enemy defeated.');
         }
     }
 }
+
 
 export default Enemy;

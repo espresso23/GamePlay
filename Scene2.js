@@ -4,254 +4,224 @@ import Player from "./entities/player.js";
 class Scene2 extends Phaser.Scene {
     constructor() {
         super("playGame");
-    }
-
-    preload() {
-
+        this.currentTurn = 'player';
+        this.playerTurnsLeft = 20;
+        this.cooldowns = { Q: 0, W: 0, E: 0, R: 0 };
     }
 
     create() {
-        // Background setup
-        document.getElementById('health-bars').style.display = 'flex'; // Hiển thị thanh máu 
-        this.background = this.add.image(0, 0, 'background');
-        this.background.setOrigin(0, 0);
-        this.background.setDisplaySize(this.sys.game.config.width, this.sys.game.config.height);
 
-        // this.add.text(20, 20, "Playing game", { font: "25px Arial", fill: "yellow" });
+        this.setupGameDimensions();
+        this.setupBackground();
 
-        // SkillQ setup
-        // this.skillQ = this.add.sprite(this.sys.game.config.width / 2, this.sys.game.config.height / 2, "skillQ");
-        // this.skillQ.setVisible(false);
-        // this.skillW = this.add.sprite(this.sys.game.config.width / 2, this.sys.game.config.height / 2, "skillW");
-        // this.skillW.setVisible(false);
+        this.createPlayerAnimations(); // Tạo hoạt ảnh trước
+        this.setupPlayer(); // Sau đó khởi tạo player
 
-        // Create player
-        this.player = new Player(this, this.sys.game.config.width / 2 - 400, this.sys.game.config.height / 2 + 70, 'player-health-bar', 'player-name', 'player-health-number');
-        this.turnsLeft = 25;
-        this.playerTurn = true;
-        this.cooldowns = { Q: 0, W: 0, E: 0, R: 0 };
-        this.enemyTurn = true;
+        this.createEnemyAnimations(); // Tạo hoạt ảnh trước
+        this.setupEnemies(); // Sau đó khởi tạo enemy
 
-
-        // Create enemies
-        this.enemies = [];
-        const positions = [
-            { x: this.sys.game.config.width / 2 + 350, y: this.sys.game.config.height / 2 - 100 },
-            { x: this.sys.game.config.width / 2 + 450, y: this.sys.game.config.height / 2 + 90 },
-            { x: this.sys.game.config.width / 2 + 400, y: this.sys.game.config.height / 2 - 30 }
-        ];
-
-        // Initialize enemies at the given positions
-        positions.forEach(pos => {
-            const enemy = new Enemy(this, pos.x, pos.y, 'enemy-health-bar', 'enemy-name', 'enemy-health-number');
-            this.enemies.push(enemy); // Add enemy to the array
-        });
-
-        // Animation for skill Q
-
-
-        // this.skillQ.on('animationcomplete', () => {
-        //     this.skillQ.setVisible(false); // Hide skill sprite after animation
-        // });
-        // this.skillW.on('animationcomplete', () => {
-        //     this.skillW.setVisible(false); // Hide skill sprite after animation
-        // });
-
-        // Handle skill 'Q'
-        // this.input.keyboard.on('keydown-Q', () => {
-        //     this.player.useSkillQ();
-        // });
-        // this.input.keyboard.on('keydown-W', () => {
-        //     this.player.useSkillW();
-        // });
-        // this.input.keyboard.on('keydown-E', () => {
-        //     this.player.useSkillE();
-        // });
-        // this.input.keyboard.on('keydown-R', () => {
-        //     this.player.useSkillR();
-        // });
-
-        // this.input.on('pointerdown', () => {
-        //     this.player.attack();
-        // });
         this.createActionButtons();
-        this.events.on('update', this.checkGameOver, this);
-        this.nextTurn();
-    }
-    createActionButtons() {
-        this.attackButton = this.add.text(50, 50, 'Attack', { fontSize: '32px', fill: '#fff' })
-            .setInteractive()
-            .on('pointerdown', () => this.playerAttack());
+        this.setupTurnText();
+        this.startTurn();
 
+    }
+
+    setupGameDimensions() {
+        this.posW = this.sys.game.config.width;
+        this.posH = this.sys.game.config.height;
+        console.log(`Width: ${this.posW}, Height: ${this.posH}`);
+    }
+
+    setupBackground() {
+        document.getElementById('health-bars').style.display = 'flex';
+        this.background = this.add.image(0, 0, 'background')
+            .setOrigin(0, 0)
+            .setDisplaySize(this.posW, this.posH);
+    }
+
+    setupPlayer() {
+        this.player = new Player(this, this.posW / 2 - 400, this.posH / 2 + 70, 'player-health-bar', 'player-name', 'player-health-number');
+        this.add.existing(this.player);
+        this.player.play("player");
+        this.createSkillAnimations();
+        this.createPlayerAnimations();
+    }
+
+    setupEnemies() {
+        this.enemies = this.add.group();
+        this.createEnemies();
+        this.createEnemyAnimations();
+    }
+
+    createEnemies() {
+        for (let i = 0; i < 3; i++) {
+            const enemy = new Enemy(this, this.posW / 2 + 100 + i * 50, this.posH / 2 - 100 + i * 70, 'enemy-health-bar', 'enemy-name', 'enemy-health-number', this.player);
+            this.enemies.add(enemy);
+            enemy.play("enemy1Idle");
+        }
+        console.log("Entities Activated!");
+    }
+
+    createPlayerAnimations() {
+        this.anims.create({
+            key: "player",
+            frames: this.anims.generateFrameNumbers("player"),
+            frameRate: 8,
+            repeat: -1
+        });
+        this.anims.create({
+            key: "attack",
+            frames: this.anims.generateFrameNumbers("attack", { start: 0, end: 22 }),
+            frameRate: 60,
+            repeat: 0,
+        });
+        this.anims.create({ key: "playerAttack", frames: this.anims.generateFrameNumbers("playerAttack", { start: 0, end: 3 }), frameRate: 10, repeat: 0 });
+        this.anims.create({ key: "hurt", frames: this.anims.generateFrameNumbers("playerHurt"), frameRate: 30, repeat: 0 });
+        this.anims.create({ key: "dead", frames: this.anims.generateFrameNumbers("playerDead"), frameRate: 25, repeat: 0 });
+    }
+
+    createEnemyAnimations() {
+        this.anims.create({ key: "enemy1Idle", frames: this.anims.generateFrameNumbers("enemy1", { start: 0, end: 8 }), frameRate: 10, repeat: -1 });
+        this.anims.create({ key: "enemy1Attack", frames: this.anims.generateFrameNumbers("enemy1", { start: 49, end: 55 }), frameRate: 20, repeat: 0 });
+        this.anims.create({ key: "enemy1Hurt", frames: this.anims.generateFrameNumbers("enemy1", { start: 68, end: 73 }), frameRate: 8, repeat: 0 });
+        this.anims.create({ key: "enemy1Dead", frames: this.anims.generateFrameNumbers("enemy1", { start: 89, end: 110 }), frameRate: 20, repeat: 0, hideOnComplete: true });
+    }
+
+    createSkillAnimations() {
+        ['Q', 'W', 'E', 'R'].forEach(skill => {
+            this.anims.create({
+                key: `skill${skill}`,
+                frames: this.anims.generateFrameNumbers(`skill${skill}`),
+                frameRate: 10 + (skill.charCodeAt(0) - 'Q'.charCodeAt(0)) * 10, // Example scaling
+                repeat: 0,
+                hideOnComplete: true
+            });
+        });
+    }
+
+    createActionButtons() {
+        console.log('Creating action buttons...');
+        this.attackButton = this.createButton(30, this.posH / 2 - 100, 'Attack', this.attack.bind(this));
         this.skillButtons = {};
         ['Q', 'W', 'E', 'R'].forEach((skill, index) => {
-            this.skillButtons[skill] = this.add.text(50, 100 + index * 50, `Skill ${skill}`, { fontSize: '32px', fill: '#fff' })
-                .setInteractive()
-                .on('pointerdown', () => this.useSkill(skill));
+            this.skillButtons[skill] = this.createButton(30, this.posH / 2 - 50 + index * 50, `Skill ${skill}`, () => this.useSkill(skill));
         });
     }
+
+    createButton(x, y, text, callback) {
+        return this.add.text(x, y, text, { fontSize: '32px', fill: '#fff' })
+            .setInteractive()
+            .on('pointerdown', callback);
+    }
+
+    attack() {
+        console.log('Attack button clicked');
+        const enemies = this.enemies.getChildren();
+        if (enemies.length > 0) {
+            const randomEnemy = Phaser.Math.RND.pick(enemies);
+            this.player.attack(randomEnemy);
+            this.endTurn();
+        }
+    }
+
     useSkill(skill) {
-        if (this.playerTurn && this.cooldowns[skill] === 0) { // Kiểm tra nếu là lượt người chơi và kỹ năng không trong cooldown
-            if (skill === 'Q') {
-                this.player.useSkillQ(); // Gọi phương thức sử dụng kỹ năng Q
-            } else if (skill === 'W') {
-                this.player.useSkillW(); // Gọi phương thức sử dụng kỹ năng W
-            } else if (skill === 'E') {
-                this.player.useSkillE(); // Gọi phương thức sử dụng kỹ năng E
-            } else if (skill === 'R') {
-                this.player.useSkillR(); // Gọi phương thức sử dụng kỹ năng R
+        if (this.currentTurn === 'player' && this.cooldowns[skill] === 0) {
+            this.player.useSkill(skill, this.enemies.getChildren());
+            this.cooldowns[skill] = 3; // Set cooldown for the skill
+            this.endTurn();
+        } else {
+            displayMessage(`Skill ${skill} is on cooldown.`);
+        }
+    }
+
+    setupTurnText() {
+        this.turnText = this.add.text(500, 30, `Turns Left: ${this.playerTurnsLeft}`, { fontSize: '32px', fill: '#fff' });
+    }
+
+    startTurn() {
+        if (this.currentTurn === 'player') {
+            this.showActionButtons(true);
+        } else {
+            this.showActionButtons(false);
+            const enemy = Phaser.Math.RND.pick(this.enemies.getChildren());
+            if (enemy) {
+                // Tạo một chút delay trước khi enemy tấn công
+                this.time.delayedCall(1000, () => {
+                    enemy.attack(this.player);
+                    // Thêm delay trước khi kết thúc lượt
+                    this.time.delayedCall(2000, this.endTurn.bind(this));
+                });
             }
-    
-            this.cooldowns[skill] = 2; // Đặt cooldown là 2 lượt
-            this.endPlayerTurn(); // Kết thúc lượt người chơi
-        } else if (!this.playerTurn) {
-            console.log(`Không thể sử dụng kỹ năng ${skill}. Chưa đến lượt người chơi.`);
-            displayMessage(`Không thể sử dụng kỹ năng ${skill}. Chưa đến lượt người chơi.`);
-        } else {
-            console.log(`Kỹ năng ${skill} đang trong cooldown.`);
-            displayMessage(`Kỹ năng ${skill} đang trong cooldown.`)
         }
     }
-    
-    playerAttack() {
-        if (this.playerTurn) { // Kiểm tra nếu là lượt người chơi
-            this.player.attack();
-            console.log("Player attacks!");
-            this.endPlayerTurn();
-        } else {
-            console.log("Không thể tấn công! Chưa đến lượt người chơi.");
-            displayMessage("Không thể tấn công! Chưa đến lượt người chơi.");
+
+
+    endTurn() {
+        if (this.currentTurn === 'player') {
+            this.playerTurnsLeft--;
+            this.turnText.setText(`Turns Left: ${this.playerTurnsLeft}`);
+            this.updateCooldowns();
+
+            if (this.playerTurnsLeft <= 0 || this.player.health <= 0) {
+                this.checkGameOver();
+            }
         }
+
+        this.currentTurn = this.currentTurn === 'player' ? 'enemy' : 'player';
+        this.startTurn();
     }
-    
-    enemyAttack() {
-        // Tấn công của kẻ địch
-        if (this.enemyTurn) {
-            console.log("Enemy attacks!");
-            this.enemies.forEach(enemy => enemy.startRandomAttack());
-            this.endEnemyTurn();
-        }
-        // Kết thúc lượt của kẻ địch, chuyển sang người chơi
-    }
-    endPlayerTurn() {
-        this.playerTurn = false; // Kết thúc lượt người chơi
-        console.log("PlayerTurn: OFF");
-         // Giảm số lượt còn lại
-         this.turnsLeft--;
-        this.updateCooldowns(); // Cập nhật thời gian hồi chiêu cho các kỹ năng
-    
-        this.time.delayedCall(1000, () => { // Thêm thời gian chờ trước khi kẻ địch tấn công
-            this.enemyAttack(); // Bắt đầu lượt tấn công của kẻ địch
-            this.nextTurn();
-        });
-    }
-    
-    endEnemyTurn() {
-        this.enemyTurn = false; // Kết thúc lượt của kẻ địch
-        console.log("EnemyTurn: OFF");
-        this.checkGameOver(); // Kiểm tra kết thúc game
-    
-        this.time.delayedCall(1000, () => { // Thêm thời gian chờ trước khi người chơi tiếp tục lượt
-            this.playerTurn = true; // Bắt đầu lượt tấn công của người chơi
-            this.nextTurn(); // Tiếp tục vào lượt tiếp theo của người chơi
-        });
-    }
-    
+
     updateCooldowns() {
         for (let skill in this.cooldowns) {
             if (this.cooldowns[skill] > 0) {
                 this.cooldowns[skill]--;
+                if (this.cooldowns[skill] < 0) {
+                    this.cooldowns[skill] = 0;
+                }
             }
         }
-    }
-    nextTurn() {
-        if (this.playerTurn) {
-            console.log("Player's turn");
-            this.showActionButtons(true); // Hiển thị nút tấn công và kỹ năng khi đến lượt người chơi
-        } else {
-            console.log("Enemy's turn");
-            this.showActionButtons(false); // Ẩn nút khi đến lượt kẻ địch
+
+        for (let skill in this.skillButtons) {
+            const cooldownText = this.cooldowns[skill] > 0 ? `Skill ${skill} (${this.cooldowns[skill]})` : `Skill ${skill}`;
+            this.skillButtons[skill].setText(cooldownText);
         }
     }
-    
+
+    checkGameOver() {
+        if (this.playerTurnsLeft <= 0 || this.player.health <= 0) {
+            console.log("Game Over! Player loses.");
+            this.showEndScreen('lose');
+        } else if (this.enemies.getChildren().length === 0) {
+            console.log("Player wins.");
+            this.showEndScreen('win');
+        }
+    }
+
+    showEndScreen(result) {
+        this.time.delayedCall(1200, () => {
+            this.scene.start(result === 'win' ? 'WinScene' : 'LoseScene');
+        });
+    }
+
     showActionButtons(show) {
         this.attackButton.setVisible(show);
         for (let skill in this.skillButtons) {
             this.skillButtons[skill].setVisible(show);
         }
     }
-    // Logic for player attacking enemy
-    handlePlayerAttack(attack, enemy) {
-        enemy.takeDamage(10); // Gọi phương thức takeDamage để xử lý
-        if (enemy.health <= 0) {
-            this.handleEnemyDeath(enemy); // Gọi phương thức chết
-        }
-        attack.destroy(); // Xóa hitbox
-    }
 
-    // Logic to randomly make enemy attack
-    handleEnemyDeath(enemy) {
-        if (enemy.health <= 0) {
-            console.log('Enemy has died.');
-            enemy.sprite.play('enemy1Dead'); // Chạy hoạt ảnh chết
-            enemy.sprite.on('animationcomplete', () => {
-                enemy.sprite.destroy(); // Xóa sprite sau khi hoạt ảnh hoàn tất
-                const index = this.enemies.indexOf(enemy);
-                if (index !== -1) {
-                    this.enemies.splice(index, 1);
-                }
-            });
-        }
-    }
-    handlePlayerDeath(player) {
-        if (this.player.health <= 0) {
-            console.log('Player has died.');
-            this.player.sprite.play('dead').setScale(2); // Chạy hoạt ảnh chết
-            this.player.sprite.on('animationcomplete', () => {
-                this.player.sprite.destroy(); // Xóa sprite sau khi hoạt ảnh hoàn tất
-            });
-        }
-    }
-    // checkGameOver() {
-    //     if (this.enemies.length === 0) {
-    //         this.showEndScreen('win');
-    //     } else if (this.player.health <= 0) {
-    //         this.showEndScreen('lose');
-    //     }
-    // }
-    checkGameOver() {
-        if (this.turnsLeft <= 0 || this.player.health <= 0) {
-            console.log("Game Over! Player loses.");
-            this.showEndScreen('lose');
-        } else if (this.enemies.length === 0) {
-            this.showEndScreen('win');
-        } else {
-            if (this.playerTurn) {
-                // Wait for player action
-            } else {
-                this.enemyAttack();
-            }
-        }
-    }
-    showEndScreen(result) {
-        // Chuyển cảnh sau một khoảng thời gian
-        this.time.delayedCall(1200, () => {
-            this.scene.start(result === 'win' ? 'WinScene' : 'LoseScene');
-        });
-    }
     update() {
         if (this.player) {
             this.player.updateHealthBarPosition();
         }
-        this.enemies.forEach(enemy => {
-            enemy.updateHealthBarPosition();
-        });
-        this.checkGameOver();
-        this.add.text(30, 30, `TurnsLeft: ${this.turnsLeft}`, { fontSize: '32px', fill: '#fff' });
+
+        this.enemies.getChildren().forEach(enemy => enemy.updateHealthBarPosition());
+        this.updateCooldowns();
     }
 }
 
 export default Scene2;
+
 function displayMessage(message) {
     const messageDiv = document.getElementById('gameMessages');
     messageDiv.innerText = message;
