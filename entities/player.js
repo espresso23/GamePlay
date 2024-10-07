@@ -1,257 +1,223 @@
 class Player extends Phaser.GameObjects.Sprite {
-    constructor(scene, x, y, healthBarId, nameId, healthNumberId) {
+    constructor(scene, x, y) {
         super(scene, x, y, 'player');
         this.scene = scene;
         scene.add.existing(this);
         scene.physics.world.enable(this);
 
-        // Set up player properties
+        // Thiết lập các thuộc tính cho player
         this.setScale(5);
-        this.healthBarId = healthBarId;
-        this.nameId = nameId;
-        this.healthNumberId = healthNumberId;
-        this.health = 10000;
-        this.maxHealth = 10000;
-        this.isAttacking = false;
-        this.skills = {
-            Q: { name: 'Skill Q', cooldown: 0, maxCooldown: 3 },
-            W: { name: 'Skill W', cooldown: 0, maxCooldown: 3 },
-            E: { name: 'Skill E', cooldown: 0, maxCooldown: 3 },
-            R: { name: 'Skill R', cooldown: 0, maxCooldown: 3 }
-        };
-        this.on('animationcomplete', this.handleAnimationComplete, this);
+        this.attackDamage = 10;
+        this.skillDamage = { Q: 20, W: 30, E: 40, R: 50 };
+        this.experience = 0;
+        this.level = 1;
+        this.nextLevelExperience = 50; // Max experience for level up
+        this.gold = 0;
+        this.name = "Samurai";
+        this.health = this.maxHealth = 200;
+        this.isDead = false;
+        this.isAnimating = false; // Trạng thái hoạt ảnh
+
+        this.updateUI();
+    }
+    updateUI() {
+        // Cập nhật tên người chơi
+        document.getElementById('player-name').innerText = this.name;
+        document.getElementById('player-experience-name').innerText = 'EXP'
+
+        // Cập nhật vàng
+        document.getElementById('gold').innerText = this.gold;
+
+        // Cập nhật cấp độ
+        document.getElementById('player-level').innerText = `Level ${this.level}`;
+
+        // Cập nhật thanh máu và chỉ số máu
+        this.updateHealthBar();
+
+        // Cập nhật thanh kinh nghiệm và chỉ số kinh nghiệm
+        this.updateExperienceBar();
+    }
+    gainExperience(amount) {
+        this.experience += amount;
+        console.log(`Experience Gained: ${this.experience}, Next Level Experience: ${this.nextLevelExperience}`);
+
+        const experienceBar = document.getElementById('player-experience');
+        const experiencePercentage = (this.experience / this.nextLevelExperience) * 100;
+        experienceBar.style.width = experiencePercentage + '%';
+
+        document.getElementById('player-experience-number').innerText = `${this.experience}/${this.nextLevelExperience}`;
+
+        if (this.experience >= this.nextLevelExperience) {
+            this.levelUp();
+        }
+        this.updateUI();
     }
 
-    handleAnimationComplete(animation) {
-        if (animation.key === 'attack') {
-            this.isAttacking = false;
-            this.play('player');
-            console.log('Player is Idle.');
-        }
+
+    levelUp() {
+        this.level++;
+        this.experience = 0;  // Reset experience after level up
+        this.nextLevelExperience += 50;  // Tăng kinh nghiệm cần để lên cấp sau
+        document.getElementById('player-level').innerText = `Level ${this.level}`;
+        document.getElementById('player-experience-number').innerText = `${this.experience}/${this.nextLevelExperience}`;
+        console.log("Level up! Now at level: " + this.level);
+        this.updateUI();
+    }
+    updateExperienceBar() {
+        const experienceBar = document.getElementById('player-experience');
+        const experiencePercentage = (this.experience / this.nextLevelExperience) * 100; // Tính toán tỷ lệ phần trăm kinh nghiệm
+        experienceBar.style.width = experiencePercentage + '%';
+        document.getElementById('player-experience-number').innerText = `${this.experience}/${this.nextLevelExperience}`; // Cập nhật hiển thị kinh nghiệm
+    }
+
+    basicAttack(target) {
+        this.play('playerAttack');
+        this.moveAttack(target, 'attack', 800, () => {
+            target.takeDamage(this.attackDamage);
+        });
+    }
+
+    useSkill(skill, target) {
+        if (this.isAnimating) return;
+
+        this.isAnimating = true;
+        this.play('playerAttack');
+
+        const skillConfigs = {
+            Q: { scale: 3, offset: { x: 0, y: 0 } },
+            W: { scale: 3, offset: { x: 0, y: 0 } },
+            E: { scale: 3, offset: { x: 0, y: 0 } },
+            R: { scale: 0.8, offset: { x: 0, y: 0 } }
+        };
+
+        const config = skillConfigs[skill];
+        const skillSprite = this.createSkillSprite(config, skill);
+
+        this.moveSkill(skillSprite, target, skill);
+    }
+
+    createSkillSprite(config, skill) {
+        const skillSprite = this.scene.add.sprite(
+            this.x + config.offset.x,
+            this.y + config.offset.y,
+            `skill${skill}`
+        )
+            .setScale(config.scale)
+            .play(`skill${skill}`);
+
+        skillSprite.on('animationcomplete', () => skillSprite.destroy());
+        return skillSprite;
+    }
+
+    moveSkill(skillSprite, target, skill) {
+        this.scene.tweens.add({
+            targets: skillSprite,
+            x: target.x,
+            y: target.y,
+            duration: 500,
+            ease: 'Power1',
+            onComplete: () => {
+                target.takeDamage(this.skillDamage[skill]);
+                this.isAnimating = false;
+            }
+        });
+    }
+
+    moveAttack(target, animation, speed, onComplete) {
+        const attackSprite = this.scene.add.sprite(this.x, this.y, animation)
+            .setScale(3)
+            .play(animation);
+
+        attackSprite.on('animationcomplete', () => attackSprite.destroy());
+
+        this.scene.tweens.add({
+            targets: attackSprite,
+            x: target.x,
+            y: target.y,
+            ease: 'Power1',
+            duration: speed,
+            onComplete: () => {
+                attackSprite.destroy();
+                onComplete();
+            }
+        });
+    }
+
+    updatePlayerHub() {
+        this.updateHealthBar();
+        this.updateExperienceBar();
     }
 
     updateHealthBar() {
-        const healthBar = document.getElementById(this.healthBarId);
-        const healthNumber = document.getElementById(this.healthNumberId);
         const healthPercentage = (this.health / this.maxHealth) * 100;
-
-        healthBar.style.width = `${healthPercentage}%`;
-        healthNumber.innerText = `${this.health}/${this.maxHealth}`;
-    }
-
-    updateHealthBarPosition() {
-        const healthBarElement = document.getElementById(this.healthBarId);
-        const nameElement = document.getElementById(this.nameId);
-        const healthNumberElement = document.getElementById(this.healthNumberId);
-
-        if (healthBarElement) {
-            this.setElementPosition(healthBarElement, -100, -50);
+        const healthBar = document.getElementById('player-health');
+        if (healthBar) {
+            healthBar.style.width = `${Math.max(healthPercentage, 0)}%`;
         }
-
-        if (nameElement) {
-            this.setElementPosition(nameElement, -100, -70);
-        }
-
-        if (healthNumberElement) {
-            this.setElementPosition(healthNumberElement, -100, -30);
+        const healthNumber = document.getElementById('player-health-number');
+        if (healthNumber) {
+            healthNumber.innerText = `${this.health}/${this.maxHealth}`;
         }
     }
 
-    setElementPosition(element, offsetX, offsetY) {
-        element.style.left = `${this.x + offsetX}px`;
-        element.style.top = `${this.y + offsetY}px`;
+    updateExperienceBar() {
+        const experiencePercentage = (this.experience / this.maxExperience) * 100;
+        const experienceBar = document.getElementById('player-experience');
+        if (experienceBar) {
+            experienceBar.style.width = `${Math.max(experiencePercentage, 0)}%`;
+        }
+        const experienceNumber = document.getElementById('player-experience-number');
+        if (experienceNumber) {
+            experienceNumber.innerText = `${this.experience}/${this.maxExperience}`;
+        }
+    }
+
+    gainExperience(amount) {
+        this.experience = Math.min(this.experience + amount, this.maxExperience);
+        this.updateExperienceBar();
+        // Kiểm tra xem người chơi có đạt cấp độ mới không
+        if (this.experience >= this.maxExperience) {
+            this.levelUp();
+        }
+    }
+
+    levelUp() {
+        // Xử lý việc lên cấp, ví dụ:
+        this.maxExperience += 50; // Tăng maxExperience cho cấp độ tiếp theo
+        this.experience = 0; // Đặt lại kinh nghiệm
+        this.maxHealth += 20; // Tăng máu tối đa
+        this.health = this.maxHealth; // Khôi phục máu khi lên cấp
+        console.log('Player leveled up!');
     }
 
     takeDamage(amount) {
-        this.health -= amount;
-        if (this.health < 0) this.health = 0;
-        this.updateHealthBar(); // Update health UI
-    }
-
-    useSkill(skill, enemies) {
-        const skillData = this.skills[skill];
-        if (skillData.cooldown === 0) {
-            this[`useSkill${skill}`](enemies);
-            skillData.cooldown = skillData.maxCooldown; // Reset cooldown
+        if (!this.hurtSprite) {
+            this.hurtSprite = this.scene.add.sprite(this.x - 100, this.y, 'hurt').setDepth(1);
         } else {
-            console.log(`${skillData.name} is on cooldown for ${skillData.cooldown.toFixed(1)} seconds.`);
+            this.hurtSprite.setPosition(this.x - 100, this.y);
+        }
+        this.hurtSprite.play("hurt").setScale(2);
+
+        this.play("player");
+        this.health = Math.max(this.health - amount, 0);
+        this.updateHealthBar();
+        if (this.health <= 0) {
+            this.die();
         }
     }
 
-    attack(enemies) {
-        if (!this.isAttacking) {
-            this.isAttacking = true;
-            this.play("playerAttack");
-            const attackHitbox = this.createHitbox(this.x, this.y, 'attack', 3);
+    die() {
+        if (this.isDead) return;
+        this.isDead = true;
 
-            const activeEnemies = this.scene.enemies.getChildren().filter(enemy => enemy && enemy.active);
-            if (activeEnemies.length === 0) {
-                this.scene.checkGameOver();
-                this.isAttacking = false;
-                attackHitbox.destroy();
-                this.play('player');
-                return;
-            }
-
-            const centerX = activeEnemies.reduce((sum, enemy) => sum + enemy.x, 0) / activeEnemies.length;
-
-            this.scene.tweens.add({
-                targets: attackHitbox,
-                x: centerX,
-                duration: 200,
-                ease: 'Power2',
-                onComplete: () => {
-                    attackHitbox.play('attack');
-                    attackHitbox.once('animationcomplete', () => this.applyDamage(activeEnemies, attackHitbox));
-                }
-            });
-
-            this.scene.physics.add.overlap(attackHitbox, activeEnemies, (hitbox, enemy) => {
-                if (enemy.active && !hitbox.hasPlayedAttack) {
-                    hitbox.play('attack');
-                    hitbox.hasPlayedAttack = true;
-                }
-            });
-        }
-    }
-
-    applyDamage(activeEnemies, attackHitbox) {
-        activeEnemies.forEach(enemy => {
-            const hitChance = Phaser.Math.Between(0, 100);
-            if (hitChance <= 70) {
-                enemy.takeDamage(10);
-                console.log(`Enemy took 10 damage. Current health: ${enemy.health}`);
-                if (enemy.health <= 0) {
-                    this.scene.handleEnemyDeath(enemy);
-                }
-            } else {
-                console.log('Attack missed the enemy.');
-            }
+        this.play("dead").setScale(1.5);
+        this.once('animationcomplete', () => {
+            console.log('Player đã chết.');
+            this.scene.checkGameOver();
         });
-
-        attackHitbox.destroy();
-        this.isAttacking = false;
-        this.play('player');
     }
-
-    createHitbox(x, y, type, scale) {
-        return this.scene.physics.add.sprite(x, y, type).setScale(scale);
-    }
-
-    useSkillQ(enemies) {
-        this.performSkill(enemies, 'skillQ', 10);
-    }
-
-    useSkillW(enemies) {
-        this.performSkill(enemies, 'skillW', 30);
-    }
-
-    useSkillE(enemies) {
-        this.performSkill(enemies, 'skillE', 25);
-    }
-
-    useSkillR(enemies) {
-        if (!this.isAttacking) {
-            console.log('Skill R activated.');
-            this.isAttacking = true;
-            this.play("playerAttack");
-
-            const activeEnemies = this.scene.enemies.getChildren().filter(enemy => enemy && enemy.active);
-            if (activeEnemies.length === 0) {
-                this.scene.checkGameOver();
-                this.isAttacking = false;
-                this.play('player');
-                return;
-            }
-
-            const centerY = activeEnemies.reduce((sum, enemy) => sum + enemy.y, 0) / activeEnemies.length;
-            const centerX = activeEnemies.reduce((sum, enemy) => sum + enemy.x, 0) / activeEnemies.length;
-
-            const attackHitbox = this.createHitbox(centerX, centerY - 200, 'skillR', 0.8);
-
-            this.scene.tweens.add({
-                targets: attackHitbox,
-                y: centerY,
-                duration: 500,
-                ease: 'Power1',
-                onComplete: () => {
-                    attackHitbox.play('skillR');
-                    attackHitbox.once('animationcomplete', () => {
-                        activeEnemies.forEach(enemy => {
-                            if (enemy.active) {
-                                enemy.takeDamage(50);
-                                console.log(`Enemy took 50 damage from Skill R. Current health: ${enemy.health}`);
-                                if (enemy.health <= 0) {
-                                    this.scene.handleEnemyDeath(enemy);
-                                    console.log('Enemy killed by Skill R.');
-                                }
-                            }
-                        });
-                        attackHitbox.destroy();
-                        this.isAttacking = false;
-                        this.play('player');
-                    });
-                }
-            });
-        }
-    }
-
-    performSkill(enemies, skillType, damage) {
-        if (!this.isAttacking) {
-            console.log(`${skillType} activated.`);
-            this.isAttacking = true;
-            this.play("playerAttack");
-
-            const attackHitbox = this.createHitbox(this.x, this.y, skillType, 5);
-            const activeEnemies = this.scene.enemies.getChildren().filter(enemy => enemy && enemy.active);
-
-            if (activeEnemies.length === 0) {
-                this.scene.checkGameOver();
-                this.isAttacking = false;
-                attackHitbox.destroy();
-                this.play('player');
-                return;
-            }
-
-            const centerX = activeEnemies.reduce((sum, enemy) => sum + enemy.x, 0) / activeEnemies.length;
-
-            this.scene.tweens.add({
-                targets: attackHitbox,
-                x: centerX,
-                duration: 500,
-                ease: 'Power1',
-                onComplete: () => {
-                    attackHitbox.play(skillType);
-                    attackHitbox.once('animationcomplete', () => {
-                        activeEnemies.forEach(enemy => {
-                            if (enemy.active) {
-                                enemy.takeDamage(damage);
-                                console.log(`Enemy took ${damage} damage from ${skillType}. Current health: ${enemy.health}`);
-                                if (enemy.health <= 0) {
-                                    this.scene.handleEnemyDeath(enemy);
-                                    console.log(`Enemy killed by ${skillType}.`);
-                                }
-                            }
-                        });
-                        attackHitbox.destroy();
-                        this.isAttacking = false;
-                        this.play('player');
-                    });
-                }
-            });
-        }
-    }
-
-    update(time, delta) {
-        // Update cooldowns
-        for (const skill in this.skills) {
-            if (this.skills[skill].cooldown > 0) {
-                this.skills[skill].cooldown -= delta / 1000; // Convert delta to seconds
-                if (this.skills[skill].cooldown < 0) {
-                    this.skills[skill].cooldown = 0; // Ensure cooldown does not go below 0
-                }
-            }
-        }
+    update() {
+        this.updateUI();
     }
 }
 

@@ -45,6 +45,7 @@ canvas {
 .logo{
     display: flex;
     position: absolute;
+    left: 50%;
     justify-content: flex-start;
     margin-top: 10px;
     margin-left: 10px;
@@ -55,4 +56,34 @@ canvas {
 .skill{
     display: flex;
     justify-content: space-evenly;
+}
+.player-hub {
+    position: absolute;
+    top: 20px; /* Có thể điều chỉnh tùy theo vị trí bạn muốn */
+    left: 20px; /* Có thể điều chỉnh tùy theo vị trí bạn muốn */
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    width: 300px; /* Có thể điều chỉnh */
+}
+
+.hub-item {
+    margin: 5px 0;
+}
+
+.health {
+    height: 10px;
+    background-color: green; /* Màu cho thanh sức khỏe */
+    transition: width 0.5s; /* Hiệu ứng chuyển động */
+}
+
+.experience {
+    height: 10px;
+    background-color: rgb(64, 64, 238); /* Màu cho thanh kinh nghiệm */
+    transition: width 0.5s; /* Hiệu ứng chuyển động */
+}
+.player-gold img{
+    width: 15px;
+    height: 15px;
 }

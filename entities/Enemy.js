@@ -1,78 +1,84 @@
+import ItemDrop from './ItemDrop.js'
+
 class Enemy extends Phaser.GameObjects.Sprite {
-    constructor(scene, x, y, healthBarId, nameId, healthNumberId, player) {
+    constructor(scene, x, y, player) {
         super(scene, x, y, 'enemy1');
         scene.add.existing(this);
         scene.physics.world.enable(this);
 
         // Thiết lập thuộc tính
+        this.scene = scene;
         this.player = player;
         this.setScale(5);
         this.flipX = true;
-        this.healthBarId = healthBarId;
-        this.nameId = nameId;
-        this.healthNumberId = healthNumberId;
-        this.health = 1000;
-        this.maxHealth = 1000;
-        this.isAttacking = false; // Theo dõi trạng thái tấn công
-        this.enemyAttackDelay = 500;
-        this.on('animationcomplete', this.handleAnimationComplete, this); // Nghe sự kiện kết thúc animation
+        this.healthBarId = 'enemy-health-bar';
+        this.nameId = 'enemy-name';
+        this.healthNumberId = 'enemy-health-number';
+        this.health = this.maxHealth = 100;
+        this.attackDamage = 10;
+        this.active = true; // Trạng thái kẻ thù sống
+        this.on('animationcomplete', this.onAnimationComplete, this);
+        this.goldAmount = Phaser.Math.Between(10, 50); // Random gold
+        this.healthPotionChance = 0.3; // 30% chance for health potion
+        this.experiencePoints = 50; // Experience points given
     }
 
-    // Phương thức xử lý khi kết thúc animation
-    handleAnimationComplete(animation) {
-        if (animation.key === 'enemy1Attack') {
-            this.isAttacking = false; // Thiết lập lại trạng thái tấn công
-            this.play('enemy1Idle'); // Trở về trạng thái idle sau khi tấn công
-            console.log('Enemy is Idle.');
-        }
+    moveAttack(target, animation, speed, onComplete) {
+        if (this.isAnimating || !this.active) return; // Kiểm tra trạng thái kẻ thù
+
+        this.isAnimating = true;
+
+        // Tạo attack sprite với animation
+        const attackSprite = this.scene.add.sprite(this.x, this.y, 'enemyAttack')
+            .setScale(3)
+            .play('enemyAttack');
+
+        // Thêm event listener cho animation complete
+        attackSprite.on('animationcomplete', () => {
+            attackSprite.destroy();
+        });
+
+        // Tween movement
+        this.scene.tweens.add({
+            targets: attackSprite,
+            x: target.x,
+            y: target.y,
+            duration: speed,
+            ease: 'Power1',
+            onComplete: () => {
+                if (onComplete) onComplete();
+                this.isAnimating = false;
+            }
+        });
     }
 
-    // Phương thức tấn công của kẻ địch
-    attack() {
-        if (!this.isAttacking) {
-            this.isAttacking = true; // Thiết lập trạng thái tấn công
-            const attackHitbox = this.createAttackHitbox();
+    basicAttack() {
+        if (this.active && !this.isAnimating) {
+            console.log("enemy attack");
+            this.play('enemy1Attack');
 
-            this.scene.tweens.add({
-                targets: attackHitbox,
-                x: this.player.x,
-                duration: 200,
-                ease: 'Power2',
-                onComplete: () => this.handleAttackComplete(attackHitbox)
+            this.moveAttack(this.player, 'enemyAttack', 500, () => {
+                if (this.active) {
+                    this.player.takeDamage(this.attackDamage);
+                    this.scene.time.delayedCall(500, () => {
+                        if (this.active) {
+                            this.play('enemy1Idle');
+                        }
+                    });
+                }
             });
         }
     }
 
-    createAttackHitbox() {
-        const attackHitbox = this.scene.physics.add.sprite(this.x, this.y, 'enemyAttack').setScale(3);
-        return attackHitbox;
-    }
-
-    handleAttackComplete(attackHitbox) {
-        console.log('Attack hitbox has reached the target.');
-        this.play('enemy1Attack');
-
-        this.scene.physics.add.overlap(attackHitbox, this.player, () => this.onPlayerHit(attackHitbox));
-    }
-
-    onPlayerHit(attackHitbox) {
-        const hitChance = Phaser.Math.Between(0, 100);
-        if (hitChance <= 30) {
-            this.player.takeDamage(10); // Gây sát thương cho người chơi
-            if (this.player.health <= 0) {
-                this.scene.handlePlayerDeath(this.player);
-            }
-        } else {
-            console.log('Attack missed the player.');
+    onAnimationComplete(animation) {
+        if (animation.key === 'enemy1Attack') {
+            this.play('enemy1Idle');  // Quay lại hoạt ảnh idle sau khi tấn công
         }
-
-        attackHitbox.destroy(); // Xóa hitbox sau khi tấn công
-        this.isAttacking = false; // Thiết lập lại trạng thái tấn công
     }
 
-    // Cập nhật thanh máu
     updateHealthBar() {
-        const healthPercentage = Math.max((this.health / this.maxHealth) * 100, 0); // Đảm bảo không âm
+        if (!this.active) return; // Không cập nhật thanh máu nếu đã chết
+        const healthPercentage = Math.max((this.health / this.maxHealth) * 100, 0);
         this.updateHealthBarElement(this.healthBarId, healthPercentage);
         this.updateHealthNumberElement(this.healthNumberId);
         this.updateHealthBarPosition();
@@ -91,54 +97,64 @@ class Enemy extends Phaser.GameObjects.Sprite {
     updateHealthNumberElement(numberId) {
         const healthNumberElement = document.getElementById(numberId);
         if (healthNumberElement) {
-            healthNumberElement.innerText = this.health > 0 ? this.health : 0;
+            healthNumberElement.innerText = Math.max(this.health, 0); // Hiển thị số lượng máu không âm
         } else {
             console.error(`Element with ID ${numberId} not found`);
         }
     }
 
     updateHealthBarPosition() {
-        const healthBarElement = document.getElementById(this.healthBarId);
-        const nameElement = document.getElementById(this.nameId);
-        const healthNumberElement = document.getElementById(this.healthNumberId);
-
-        if (healthBarElement) {
-            this.setElementPosition(healthBarElement, -100, -50);
-        }
-
-        if (nameElement) {
-            this.setElementPosition(nameElement, -100, -70);
-        }
-
-        if (healthNumberElement) {
-            this.setElementPosition(healthNumberElement, -100, -30);
+        const offsets = { healthBar: [-100, -50], name: [-100, -70], healthNumber: [-100, -30] };
+        for (const [key, [offsetX, offsetY]] of Object.entries(offsets)) {
+            this.updateElementPosition(this[`${key}Id`], offsetX, offsetY);
         }
     }
 
-    setElementPosition(element, offsetX, offsetY) {
-        element.style.left = `${this.x + offsetX}px`;
-        element.style.top = `${this.y + offsetY}px`;
+    updateElementPosition(elementId, offsetX, offsetY) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.style.left = `${this.x + offsetX}px`;
+            element.style.top = `${this.y + offsetY}px`;
+        }
     }
 
     takeDamage(amount) {
-        this.play("enemy1Hurt");
-        this.health -= amount;
-        console.log("Enemy was attacked");
-        this.updateHealthBar();
-        if (this.health <= 0) {
-            this.scene.handleEnemyDeath(this);
+        if (this.active) {
+            console.log("enemy hurt");
+            this.health -= amount;
+            this.updateHealthBar(); // Cập nhật thanh máu trước khi kiểm tra trạng thái
+
+            if (this.health > 0) {
+                this.play("enemy1Hurt"); // Chỉ phát hoạt ảnh tổn thương khi vẫn còn máu
+            } else {
+                this.die();
+                this.health = 0;
+            }
         }
     }
+    die() {
+        console.log("die() called."); // Log when die() is called
+        this.active = false; // Mark enemy as dead
 
-    handlePlayerAttack(playerAttack) {
-        this.health -= playerAttack.damage;
-        console.log(`Enemy took ${playerAttack.damage} damage. Current health: ${this.health}`);
-        if (this.health <= 0) {
-            this.destroy(); // Phá hủy đối tượng enemy sau khi chết
-            console.log('Enemy defeated.');
-        }
+        this.play("enemy1Dead");
+        console.log("Enemy animation started."); // Log animation start
+
+        this.scene.time.delayedCall(1000, () => { // Use a delay to simulate animation completion
+            console.log("Delayed call for dropping items..."); // Log when delay ends
+            const dropType = Phaser.Math.RND.pick(['gold', 'health', 'experience']);
+            console.log(`Dropping item: ${dropType}`); // Log the type of item being dropped
+            new ItemDrop(this.scene, this.x, this.y, this.scene.player, dropType);
+            this.destroy(); // Destroy the enemy object
+            console.log('Enemy has died and dropped an item.');
+
+        });
+        this.scene.checkGameOver();
+    }
+
+
+    update() {
+        this.updateHealthBar();
     }
 }
-
 
 export default Enemy;

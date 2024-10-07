@@ -12,6 +12,7 @@ class WinScene extends Phaser.Scene {
         // Hiển thị background nền
         document.getElementsByClassName('logo')[0].style.display  = 'none';
         document.getElementById('health-bars').style.display = 'none';
+        document.getElementById('player-hub').style.display = 'none';
         const background = this.add.image(0, 0, 'backgroundOver').setOrigin(0, 0);
         background.setDisplaySize(this.sys.game.config.width, this.sys.game.config.height);
 

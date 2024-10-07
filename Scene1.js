@@ -5,10 +5,10 @@ class Scene1 extends Phaser.Scene {
 
     preload() {
         this.load.image('background', 'assets/background/background3.png');
-        this.load.spritesheet('skillR', 'assets/BlastQ.png', {
-            frameWidth: 440,
-            frameHeight: 549
-        });
+        this.load.image('gold','assets/gold.png')
+        this.load.image('experience','assets/experience.png')
+        this.load.image('health','assets/health.png')
+
         this.load.spritesheet("enemy1", 'assets/NightBorne.png', {
             frameWidth: 80,
             frameHeight: 80
@@ -28,6 +28,10 @@ class Scene1 extends Phaser.Scene {
         this.load.spritesheet('skillQ', 'assets/skillQ.png', {
             frameWidth: 64,
             frameHeight: 57
+        });
+        this.load.spritesheet('skillR', 'assets/BlastQ.png', {
+            frameWidth: 440,
+            frameHeight: 549
         });
 
         this.load.spritesheet("player", 'assets/playerIdle.png', {
@@ -56,7 +60,7 @@ class Scene1 extends Phaser.Scene {
         this.add.text(20, 20, "Loading game...");
         this.scene.start("playGame");
 
-       
+
 
     }
 }
